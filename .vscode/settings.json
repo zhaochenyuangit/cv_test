@@ -1,0 +1,7 @@
+{
+    "files.associations": {
+        "helper.h": "c",
+        "feature_extraction.h": "c",
+        "human_object.h": "c"
+    }
+}
