@@ -21,3 +21,4 @@ Blob *extract_feature(uint8_t *labeled, int n_blobs, int img_w, int img_h);
 
 void print_blob_info(Blob *blob_list, int n_blobs);
 void print_blob_mask(Blob *blob_list, int n_blobs, short *holder, int w, int h);
+void delete_blob_list(Blob *blob_list, int n_blobs);

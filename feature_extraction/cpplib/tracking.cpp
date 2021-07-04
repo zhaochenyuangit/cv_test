@@ -58,6 +58,9 @@ bool ObjectList::delete_object(int i)
     return 0;
 }
 
-int ObjectList::get_n_objects(){
+int ObjectList::get_n_objects()
+{
     return n_ob;
 }
+
+

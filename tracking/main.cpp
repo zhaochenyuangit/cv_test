@@ -66,16 +66,13 @@ int main(void)
     //print_blob_mask(blobs,n_blobs,holder1,IM_W,IM_H);
     print_blob_info(blobs, n_blobs);
 
-    HumanObject obj1(1,30,30,200);
-    obj1.update(50,20,300);
-    int x,y;
-    obj1.predict(&x,&y);
-    printf("new pos: %d,%d\n",x,y);
-
     ObjectList tracking;
-    tracking.append_object(&obj1);
-    printf("n objects: %d\n",tracking.get_n_objects());
+    tracking.matching(blobs,n_blobs);
+    printf("object num: %d\n",tracking.get_n_objects());
+    int x,y,x2,y2;
+    ObjectNode *head = tracking.get_head_node();
+    head->next->ob->get_shift(&x,&y,&x2,&y2);
+    printf("loc: %d %d\n",x2,y2);
 
-    //print_array_c(mask, IM_W, IM_H);
     return 0;
 }

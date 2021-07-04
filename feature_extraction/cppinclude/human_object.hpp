@@ -17,6 +17,8 @@ private:
     int pos_y_;
     int vel_x_;
     int vel_y_;
+    int first_x_;
+    int first_y_;
 
 public:
     HumanObject(int label, int pos_x, int pos_y, int size);
@@ -24,4 +26,5 @@ public:
     void update(int pos_x, int pos_y, int size);
     void ab_filter(int pos_x, int pos_y);
     void predict(int *ppos_x, int *ppos_y);
+    
 };

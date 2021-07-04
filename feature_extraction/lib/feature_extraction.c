@@ -4,7 +4,6 @@ static uint32_t calc_centroid(uint8_t *mask, int width, int height, uint32_t *ce
 static void chamfer_distance_transform(uint8_t *mask, int width, int height, int a, int b);
 static int calc_centrals(uint8_t *submask, int width, int height, uint32_t **location_list_ptr, uint8_t **distance_list_ptr);
 
-
 void print_blob_info(Blob *blob_list, int n_blobs)
 {
     for (int i = 0; i < n_blobs; i++)
@@ -283,4 +282,13 @@ static uint32_t calc_centroid(uint8_t *mask, int width, int height, uint32_t *ce
     col_sum /= count;
     *centroid_index = row_sum * width + col_sum;
     return count;
+}
+
+void delete_blob_list(Blob *blob_list, int n_blobs)
+{
+    for(int i =0;i<n_blobs;i++){
+        free(blob_list[i].central_distance_list);
+        free(blob_list[i].central_index_list);
+    }
+    free(blob_list);
 }

@@ -9,6 +9,8 @@ HumanObject::HumanObject(int label, int pos_x, int pos_y, int size)
     printf("create object %d from Blob %d\n", label_, label);
     pos_x_ = pos_x;
     pos_y_ = pos_y;
+    first_x_ = pos_x;
+    first_y_ = pos_y;
     size_ = size;
     last_size_ = size;
     vel_x_ = 0;
@@ -45,4 +47,16 @@ void HumanObject::predict(int *ppos_x, int *ppos_y)
 HumanObject::~HumanObject()
 {
     printf("delete object %d\n", label_);
+}
+
+void HumanObject::get_shift(int *first_x, int *first_y, int *now_x, int *now_y)
+{
+    *first_x = first_x_;
+    *first_y = first_y_;
+    *now_x = pos_x_;
+    *now_y = pos_y_;
+}
+
+int HumanObject::get_index(){
+    return label_;
 }
