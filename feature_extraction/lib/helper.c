@@ -7,7 +7,24 @@ void print_array_sh(short *array, int width, int height)
         for (int c = 0; c < width; c++)
         {
             int index = r * width + c;
-            printf("%d ", array[index]);
+            if (array[index])
+            {
+                printf("%d ", array[index]);
+            }
+            else
+            {
+                printf("- ");
+            }
+            /*
+            if (array[index])
+            {
+                printf("* ");
+            }
+            else
+            {
+                printf("- ");
+            }
+            //*/
         }
         printf("\n");
     }

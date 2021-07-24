@@ -1,7 +1,7 @@
 #include "feature_extraction.h"
-
+#include "helper.h"
 static uint32_t calc_centroid(uint8_t *mask, int width, int height, uint32_t *centroid_index);
-static void chamfer_distance_transform(uint8_t *mask, int width, int height, int a, int b);
+
 static int calc_centrals(uint8_t *submask, int width, int height, uint32_t **location_list_ptr, uint8_t **distance_list_ptr);
 
 void print_blob_info(Blob *blob_list, int n_blobs)
@@ -14,8 +14,9 @@ void print_blob_info(Blob *blob_list, int n_blobs)
     }
 }
 
-void print_blob_mask(Blob *blob_list, int n_blobs, short *holder, int w, int h)
+void print_blob_mask(Blob *blob_list, int n_blobs, int w, int h)
 {
+    uint8_t *holder = malloc(sizeof(uint8_t) * (w * h));
     for (int n = 0; n < n_blobs; n++)
     {
         for (int i = 0; i < (w * h); i++)
@@ -32,15 +33,28 @@ void print_blob_mask(Blob *blob_list, int n_blobs, short *holder, int w, int h)
         {
             for (int c = 0; c < w; c++)
             {
-                printf("%d ", holder[r * w + c]);
+                int index = r * w + c;
+                if (holder[index])
+                {
+                    printf("%d ", holder[r * w + c]);
+                }
+                else
+                {
+                    printf("- ");
+                }
             }
             printf("\n");
         }
     }
+    free(holder);
 }
 
 struct Blob *extract_feature(uint8_t *labeled, int n_blobs, int img_w, int img_h)
 {
+    if (n_blobs == 0)
+    {
+        return NULL;
+    }
     struct Blob *blob_list = malloc(sizeof(struct Blob) * n_blobs);
     if (blob_list == NULL)
     {
@@ -75,74 +89,32 @@ struct Blob *extract_feature(uint8_t *labeled, int n_blobs, int img_w, int img_h
  */
 static int calc_centrals(uint8_t *submask, int width, int height, uint32_t **location_list_ptr, uint8_t **distance_list_ptr)
 {
+    uint8_t *mask2 = malloc(sizeof(uint8_t) * (width * height));
+
     chamfer_dt_city(submask, width, height);
-    //calculate max distance
-    int max_loc = 0;
-    for (int i = 1; i < (width * height); i++)
+    int n_centrals = central_detector(submask, mask2, width, height);
+    if (n_centrals == 0)
     {
-        if (submask[i] > submask[max_loc])
-        {
-            max_loc = i;
-        }
-    }
-    int threshold = submask[max_loc] * 0.76;
-    //calculate number of central points
-    uint32_t *location_list_largest = malloc(sizeof(uint32_t) * (width * height));
-    if (location_list_largest == NULL)
-    {
-        printf("calc_centrals malloc failed!\n");
-        return (-1);
-    }
-    uint8_t *distance_list_largest = malloc(sizeof(uint8_t) * (width * height));
-    if (distance_list_largest == NULL)
-    {
-        printf("calc_centrals malloc failed!\n");
-        free(location_list_largest);
-        return (-1);
-    }
-    int n_points = 0;
-    for (int i = 0; i < (width * height); i++)
-    {
-        if (submask[i] > threshold)
-        {
-            location_list_largest[n_points] = i;
-            distance_list_largest[n_points] = submask[i];
-            n_points++;
-        }
-    }
-    if (n_points < 10)
-    {
-        free(location_list_largest);
-        free(distance_list_largest);
         *location_list_ptr = NULL;
         *distance_list_ptr = NULL;
-        return n_points;
+        return 0;
     }
-    *location_list_ptr = malloc(sizeof(uint32_t) * n_points);
-    if (*location_list_ptr == NULL)
+    *location_list_ptr = malloc(sizeof(uint32_t) * n_centrals);
+    *distance_list_ptr = malloc(sizeof(uint8_t) * n_centrals);
+    int count = 0;
+    for (int i = 0; i < (width * height); i++)
     {
-        printf("calc_centrals malloc failed!\n");
-        free(location_list_largest);
-        free(distance_list_largest);
-        return (-1);
+        if (mask2[i] == 0)
+        {
+            continue;
+        }
+        (*location_list_ptr)[count] = i;
+        (*distance_list_ptr)[count] = mask2[i];
+        count += 1;
     }
-    *distance_list_ptr = malloc(sizeof(uint8_t) * n_points);
-    if (*distance_list_ptr == NULL)
-    {
-        printf("calc_centrals malloc failed!\n");
-        free(location_list_largest);
-        free(distance_list_largest);
-        free(*location_list_ptr);
-        return (-1);
-    }
-    for (int i = 0; i < n_points; i++)
-    {
-        (*location_list_ptr)[i] = location_list_largest[i];
-        (*distance_list_ptr)[i] = distance_list_largest[i];
-    }
-    free(location_list_largest);
-    free(distance_list_largest);
-    return n_points;
+    free(mask2);
+
+    return n_centrals;
 }
 
 void chamfer_dt_city(uint8_t *mask, int width, int height)
@@ -154,7 +126,7 @@ void chamfer_dt_city(uint8_t *mask, int width, int height)
  * @param mask,width,height the binary mask to be transformed and its width, height
  * @param a,b the distance definition, a: distance to neighbour-4 pixels, b: distance to corner-neighbour pixels 
 */
-static void chamfer_distance_transform(uint8_t *mask, int width, int height, int a, int b)
+void chamfer_distance_transform(uint8_t *mask, int width, int height, int a, int b)
 {
     if ((width >= 255) || (height >= 255))
     {
@@ -286,9 +258,55 @@ static uint32_t calc_centroid(uint8_t *mask, int width, int height, uint32_t *ce
 
 void delete_blob_list(Blob *blob_list, int n_blobs)
 {
-    for(int i =0;i<n_blobs;i++){
+    for (int i = 0; i < n_blobs; i++)
+    {
         free(blob_list[i].central_distance_list);
         free(blob_list[i].central_index_list);
     }
     free(blob_list);
+}
+
+int central_detector(uint8_t *input, uint8_t *output, int const img_w, int const img_h)
+{
+    int n_centrals = 0;
+    int kernel[] = {-1, -2, -1, -2, 12, -2, -1, -2, -1};
+    const int threshold = 6;
+    int side = 3;
+    int radius = (side - 1) / 2;
+    int center = radius * side + radius;
+    for (int i = 0; i < (img_w * img_h); i++)
+    {
+        output[i] = 0;
+    }
+    for (int r = 1; r < img_h-1; r++)
+    {
+        for (int c = 1; c < img_w-1; c++)
+        {
+            int px_index = r * img_w + c;
+            if (input[px_index] == 0)
+            {
+                continue;
+            }
+            int sum = 0;
+            for (int r_offset = -radius; r_offset <= radius; r_offset++)
+            {
+                int r_offset_fin = ((r + r_offset) < 0) ? (-r_offset) : r_offset;
+                r_offset_fin = ((r + r_offset) >= img_h) ? (-r_offset) : r_offset;
+                int index_offset_base = r_offset_fin * img_w;
+                int kernel_offset_base = r_offset_fin * side;
+                for (int c_offset = -radius; c_offset <= radius; c_offset++)
+                {
+                    int c_offset_fin = ((c + c_offset) < 0) ? (-c_offset) : c_offset;
+                    c_offset_fin = ((c + c_offset) >= img_w) ? (-c_offset) : c_offset;
+                    int index_offset = index_offset_base + c_offset_fin;
+                    int kernel_offset = kernel_offset_base + c_offset_fin;
+                    int inter = input[px_index + index_offset] * kernel[center + kernel_offset];
+                    sum += inter;
+                }
+            }
+            output[px_index] = ((sum >= threshold)) ? sum : 0;
+            n_centrals += (sum >= threshold) ? 1 : 0;
+        }
+    }
+    return n_centrals;
 }

@@ -1,5 +1,3 @@
-extern "C"
-{
 #include "stdio.h"
 #include <stdbool.h>
 #include <string.h>
@@ -7,9 +5,6 @@ extern "C"
 #include "helper.h"
 #include "detect.h"
 #include "feature_extraction.h"
-}
-#include "human_object.hpp"
-#include "tracking.hpp"
 
 enum
 {
@@ -26,14 +21,14 @@ enum
 
 short im[IM_LEN];
 uint8_t mask[IM_LEN];
-static short holder1[IM_LEN];
-static short holder2[IM_LEN];
 
 extern short dummy[];
 extern short two[];
 
 int blob_detection(short *raw, uint8_t *result)
 {
+    static short holder1[IM_LEN];
+    static short holder2[IM_LEN];
     interpolation71x71(raw, im);
     image_copy(im, holder1, IM_LEN);
     average_filter(holder1, IM_W, IM_H, 35);
@@ -60,21 +55,28 @@ int main(void)
     printf("detect: %.2f ms\n", performance_evaluation(1));
     printf("detected %d blobs\n", n_blobs);
     performance_evaluation(0);
+    /*
+    chamfer_distance_transform(mask, IM_W, IM_H, 1, 2);
+    uint8_t mask2[IM_LEN];
+    int n_centrals = central_detector(mask, mask2, IM_W, IM_H);
+    printf("feature extract: %.2f ms\n", performance_evaluation(1));
+    print_array_c(mask, IM_W, IM_H);
+    printf("\n");
+    print_array_c(mask2, IM_W, IM_H);
+    printf("%d\n",n_centrals);
+    //*/
+    ///*
     Blob *blobs = extract_feature(mask, n_blobs, IM_W, IM_H);
     printf("feature extract: %.2f ms\n", performance_evaluation(1));
-
-    //print_blob_mask(blobs,n_blobs,holder1,IM_W,IM_H);
+    Blob blob = blobs[1];
+    for (int i = 0; i < blob.n_central_points; i++)
+    {
+        printf("%d,%d\n", blob.central_index_list[i], blob.central_distance_list[i]);
+    }
+    printf("total %d central points\n", blob.n_central_points);
+    print_blob_mask(blobs,n_blobs,IM_W,IM_H);
     print_blob_info(blobs, n_blobs);
-
-    HumanObject obj1(1,30,30,200);
-    obj1.update(50,20,300);
-    int x,y;
-    obj1.predict(&x,&y);
-    printf("new pos: %d,%d\n",x,y);
-
-    ObjectList tracking;
-    tracking.append_object(&obj1);
-    printf("n objects: %d\n",tracking.get_n_objects());
+    //*/
 
     //print_array_c(mask, IM_W, IM_H);
     return 0;
